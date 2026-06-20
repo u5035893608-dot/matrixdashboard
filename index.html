@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Matrix Besturing v1.0</title>
-    <script src="https://unpkg.com/obs-websocket-js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/obs-websocket-js/5.0.5/obs-websocket.min.js"></script>
     <style>
         body { background-color: #1e1e1e; color: #fff; font-family: sans-serif; padding: 20px; }
         .container { display: flex; gap: 20px; }
@@ -37,59 +37,50 @@
 
         <div class="box">
             <h3>Live Status</h3>
-            <div class="status-box" id="liveStatus">Laden...</div>
+            <div class="status-box" id="liveStatus">Verbinden...</div>
         </div>
     </div>
 
     <script>
-        // We controleren eerst of de bibliotheek netjes geladen is via 'window'
-        const OBSClient = window.OBSWebSocket ? window.OBSWebSocket.default : null;
-        
-        if (!OBSClient) {
-            alert("Fout: De OBS-softwarebibliotheek kon niet worden geladen. Controleer of je internetverbinding hebt.");
-        }
-
-        const obs = new OBSClient();
+        // Deze methode werkt altijd op een live website
+        const obs = new OBSWebSocket();
         
         async function connectOBS() {
             try {
-                // VERVANG HIERONDER JE WACHTWOORD ALS DAT IN OBS STAAT INGESTELD
+                // VUL HIERONDER JE OBS WACHTWOORD IN ALS JE DIE GEBRUIKT
                 await obs.connect('ws://192.168.1.21:4455', 'cxFP1n4QWzeNC6g3');
                 console.log("Verbonden met OBS!");
                 updateStatus();
             } catch (error) {
                 console.error("Verbinding mislukt:", error);
-                document.getElementById('liveStatus').innerText = "Geen OBS gevonden";
+                document.getElementById('liveStatus').innerText = "Geen OBS";
             }
         }
 
-        // Vraag aan OBS welke scène nu live is
         async function updateStatus() {
             try {
                 const { currentProgramSceneName } = await obs.call('GetCurrentProgramScene');
                 document.getElementById('liveStatus').innerText = currentProgramSceneName;
             } catch (e) {
-                console.log("Status ophalen mislukt");
+                document.getElementById('liveStatus').innerText = "Fout";
             }
         }
 
-        // Schakel naar de gekozen scène uit de dropdown
         async function schakelScene() {
             const gekozenScene = document.getElementById('videoInput').value;
             try {
                 await obs.call('SetCurrentProgramScene', { sceneName: gekozenScene });
                 updateStatus();
             } catch (error) {
-                alert("Schakelen mislukt. Bestaat de scène '"+gekozenScene+"' wel in OBS?");
+                alert("Schakelen mislukt. Bestaat scène '"+gekozenScene+"' in OBS?");
             }
         }
 
-        // Luister of de scène in OBS handmatig wordt aangepast, update dan de status
         obs.on('CurrentProgramSceneChanged', data => {
             document.getElementById('liveStatus').innerText = data.sceneName;
         });
 
-        // Start de verbinding bij het openen van de pagina
+        // Start de verbinding
         connectOBS();
     </script>
 </body>
